@@ -1416,20 +1416,58 @@ function renderSetup(){
   );
 }
 
-function doAnalyze(){
+function doAnalyze(){async function doAnalyze() {
   var name = document.getElementById("f-name").value.trim();
   var age = document.getElementById("f-age").value.trim();
   var lang = document.getElementById("f-lang").value;
   var problem = document.getElementById("f-problem").value;
   var caregiver = document.getElementById("f-caregiver").value.trim();
   var caregiverPhone = document.getElementById("f-caregiver-phone").value.trim();
-  if(!name){ document.getElementById("f-name").focus(); return; }
+
+  if (!name) {
+    document.getElementById("f-name").focus();
+    return;
+  }
+
   state.lang = lang;
-  state.patient = {name:name, age:age || "—", problemKey:problem, caregiverName:caregiver, caregiverPhone:caregiverPhone};
+
+  state.patient = {
+    name: name,
+    age: age,
+    problemkey: problem,
+    caregiver: caregiver,
+    caregiverPhone: caregiverPhone
+  };
+
+  // Save patient to Supabase
+  const { data, error } = await supabaseClient
+    .from("patients")
+    .insert([{
+      name: name,
+      age: age ? Number(age) : null,
+      health_problem: problem,
+      language: lang,
+      caregiver_name: caregiver,
+      caregiver_phone: caregiverPhone
+    }])
+    .select()
+    .single();
+
+  if (error) {
+    console.error("Patient save error:", error);
+    alert("Patient save failed: " + error.message);
+    return;
+  }
+
+  state.patient.id = data.id;
+
   state.recommendations = getRecommendations(problem);
+
   goToView("recommend");
   saveState();
   render();
+}
+  
 }
 
 /* ============================= VIEW: RECOMMEND ============================= */
